@@ -1,0 +1,56 @@
+- hosts: all
+  user: ubuntu
+  become_method: yes
+  sudo: yes
+  connection: ssh
+  gather_facts: no
+  tasks:
+  - name: update and upgrade
+    become: true
+    apt:
+      upgrade: yes
+      update_cache: yes
+  - name: downloading the file
+    get_url:
+      url: http://packages.erlang-solutions.com/erlang/esl-erlang/FLAVOUR_1_general/esl-erlang_20.3-1~ubuntu~artful_amd64.deb
+      dest: /home/ubuntu/
+      mode: 0440
+  - name: extract the file
+    command: dpkg -i esl-erlang_20.3-1~ubuntu~artful_amd64.deb
+
+  - name: rabbitmq repo
+    apt_repository: repo='deb https://dl.bintray.com/rabbitmq/debian xenial main' state=present
+    register: result
+  - debug: var=result
+
+  - name: add the rabbit key
+    apt_key: url=https://www.rabbitmq.com/rabbitmq-release-signing-key.asc state=present
+    register: result
+  - debug: var=result
+
+  - name: updating
+    apt:
+      update_cache: yes
+
+  - name: installing rabbitmq
+    apt: name=rabbitmq-server state=present
+    register: result
+  - debug: var=result
+
+  - name: enabling service
+    service: name=rabbitmq-server enabled=yes state=started
+
+
+  - name: enabling plugins
+    command: sudo rabbitmq-plugins enable rabbitmq_management
+    command: sudo chown -R rabbitmq:rabbitmq /var/lib/rabbitmq
+
+  - name: add rabbitmq users
+    rabbitmq_user:
+      user: sandy
+      password: changeme
+      configure_priv: '.*'
+      read_priv: '.*'
+      write_priv: '.*'
+
+

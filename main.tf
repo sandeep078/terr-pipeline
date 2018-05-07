@@ -13,6 +13,39 @@ resource "aws_key_pair" "deployer" {
   public_key = "${file("/root/.ssh/id_rsa.pub")}"
 }
 
+#-----IAM----
+
+resource "aws_iam_user" "newuser" {
+  name = "sandeep"
+}
+
+resource "aws_iam_access_key" "newkey" {
+  user = "${aws_iam_user.newuser.name}"
+}
+
+resource "aws_iam_policy" "policy" {
+    name        = "admin-policy"
+    description = "A test policy"
+    policy      = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "*",
+            "Resource": "*"
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_user_policy_attachment" "admin-attach" {
+    user       = "${aws_iam_user.newuser.name}"
+    policy_arn = "${aws_iam_policy.policy.arn}"
+}
+
+
 #---security groups--
 
 #public security group
